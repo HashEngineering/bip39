@@ -706,7 +706,7 @@
                 DOM.bip44coin.val(16);
             },
         },
-                {
+        {
             name: "ShadowCash",
             onSelect: function() {
                 network = bitcoin.networks.shadow;
@@ -762,7 +762,7 @@
                 DOM.bip44coin.val(28);
             },
         },
-                {
+        {
             name: "Viacoin",
             onSelect: function() {
                 network = bitcoin.networks.viacoin;
@@ -1167,14 +1167,21 @@
                 network = bitcoin.networks.gobyte;
                 DOM.bip44coin.val(176);
             },
-        },/*
+        },
         {
             name: "Groestlcoin",
             onSelect: function() {
                 network = bitcoin.networks.groestlcoin;
                 DOM.bip44coin.val(17);
             },
-        },*/
+        },
+        {
+            name: "Groestlcoin Testnet",
+            onSelect: function() {
+                network = bitcoin.networks.groestlcointestnet;
+                DOM.bip44coin.val(1);
+            },
+        },
         {
             name: "Newyorkcoin",
             onSelect: function() {

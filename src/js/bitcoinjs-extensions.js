@@ -1284,6 +1284,19 @@ bitcoin.networks.groestlcoin = {
     pubKeyHash: 36,
     scriptHash: 5,
     wif: 128,
+    base58hash: "groestlx2",
+}
+
+bitcoin.networks.groestlcointestnet = {
+  magicPrefix: '\x19GroestlCoin Signed Message:\n',
+  bip32: {
+    public: 0x043587cf,
+    private: 0x04358394
+  },
+  pubKeyHash: 0x6f,
+  scriptHash: 0xc4,
+  wif: 0xef,
+  base58hash: "groestlx2",
 }
 
 bitcoin.networks.newyorkcoin = {

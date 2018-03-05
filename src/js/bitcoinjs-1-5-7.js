@@ -7229,9 +7229,33 @@ function sha256x2 (buffer) {
   return createHash('sha256').update(buffer).digest()
 }
 
+function groestlx2(buffer) {
+  return new Buffer(hex2bytes(Module.ccall('GroestlCoinHash', 'string', ['string'], [int8ArrayToHexString(buffer)])));
+}
+
+function int8ArrayToHexString(array) {
+	var str = '';
+
+	for (var i = 0; i < array.length; i++) {
+		if (array[i] < 16) {
+			str += '0' + array[i].toString(16);
+		}
+		else {
+			str += array[i].toString(16);
+		}
+	}
+	return str;
+}
+
+function hex2bytes(s) {
+	for (var c = [], len = s.length, i = 0; i < len; i += 2)
+		c.push(parseInt(s.substring(i, i + 2), 16));
+	return c;
+}
+
 // Encode a buffer as a base58-check encoded string
-function encode (payload) {
-  var checksum = sha256x2(payload).slice(0, 4)
+function encode (payload, hash) {
+  var checksum = hash == "groestlx2" ? groestlx2(payload).slice(0, 4) : sha256x2(payload).slice(0, 4)
 
   return base58.encode(Buffer.concat([
     payload,
@@ -7240,12 +7264,12 @@ function encode (payload) {
 }
 
 // Decode a base58-check encoded string to a buffer
-function decode (string) {
+function decode (string, hash) {
   var buffer = new Buffer(base58.decode(string))
 
   var payload = buffer.slice(0, -4)
   var checksum = buffer.slice(-4)
-  var newChecksum = sha256x2(payload).slice(0, 4)
+  var newChecksum = hash == "groestlx2" ? groestlx2(payload).slice(0, 4) : sha256x2(payload).slice(0, 4)
 
   for (var i = 0; i < newChecksum.length; ++i) {
     if (newChecksum[i] === checksum[i]) continue
@@ -9418,7 +9442,7 @@ function findScriptTypeByVersion (version) {
   }
 }
 
-function Address (hash, version) {
+function Address (hash, version, base58hash) {
   typeForce('Buffer', hash)
 
   assert.strictEqual(hash.length, 20, 'Invalid hash length')
@@ -9428,14 +9452,15 @@ function Address (hash, version) {
   else assert.strictEqual(version & 0xffff, version, 'Invalid version byte')
   this.hash = hash
   this.version = version
+  this.base58hash = base58hash;
 }
 
-Address.fromBase58Check = function (string) {
-  var payload = base58check.decode(string)
+Address.fromBase58Check = function (string, network) {
+  var payload = base58check.decode(string, network)
   var version = payload.readUInt8(0)
   var hash = payload.slice(1)
 
-  return new Address(hash, version)
+  return new Address(hash, version, network.base58hash)
 }
 
 Address.fromOutputScript = function (script, network) {
@@ -9459,7 +9484,7 @@ Address.prototype.toBase58Check = function () {
     payload.writeUInt16BE(this.version, 0)
     this.hash.copy(payload, 2)
   }
-  return base58check.encode(payload)
+  return base58check.encode(payload, this.base58hash)
 
 }
 
@@ -10195,7 +10220,7 @@ ECKey.prototype.toWIF = function (network) {
     buffer.writeUInt8(0x01, 33)
   }
 
-  return base58check.encode(buffer)
+  return base58check.encode(buffer, network.base58hash)
 }
 
 // Operations
@@ -10247,7 +10272,7 @@ ECPubKey.fromHex = function (hex) {
 ECPubKey.prototype.getAddress = function (network) {
   network = network || networks.bitcoin
 
-  return new Address(crypto.hash160(this.toBuffer()), network.pubKeyHash)
+  return new Address(crypto.hash160(this.toBuffer()), network.pubKeyHash, network.base58hash)
 }
 
 ECPubKey.prototype.verify = function (hash, signature) {
@@ -10577,7 +10602,7 @@ HDNode.prototype.neutered = function () {
 }
 
 HDNode.prototype.toBase58 = function (isPrivate) {
-  return base58check.encode(this.toBuffer(isPrivate, true))
+  return base58check.encode(this.toBuffer(isPrivate, true), this.network.base58hash)
 }
 
 // FIXME: remove in 2.x.y
